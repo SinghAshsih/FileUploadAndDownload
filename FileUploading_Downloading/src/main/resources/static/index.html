@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload/Download Application</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-size: 25px; /* Increased font size */
+        }
+        .navbar {
+            background-color: #343a40;
+        }
+        .navbar-brand {
+            color: white;
+            font-size: 1.5rem; /* Increase the font size */
+            padding: 10px 15px; /* Adjust the padding as needed */
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .alert {
+            margin-top: 20px;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .upload-icon, .download-icon, .remove-icon {
+            width: 24px;
+            height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <a class="navbar-brand" href="#">Ravindra Sir Classes Notes</a>
+</nav>
+
+<div class="container">
+    <h2 class="text-center">Upload/Download Application</h2>
+    <form id="uploadForm" method="POST" enctype="multipart/form-data" action="/upload">
+        <div class="form-group">
+            <input type="file" class="form-control-file" name="file" required>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <img src="https://img.icons8.com/ios-filled/50/000000/upload.png" alt="Upload" class="upload-icon"> Upload
+        </button>
+    </form>
+
+    <!-- Success alert box -->
+    <div id="uploadSuccessAlert" class="alert alert-success" role="alert" style="display: none;">
+        File successfully uploaded!
+    </div>
+
+    <h4>Download Files</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>File Name</th>
+                <th>Action</th>
+                <th>Remove</th>
+            </tr>
+        </thead>
+        <tbody id="fileList">
+            <!-- File links will be added here dynamically -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Function to display uploaded files
+    function displayFiles(files) {
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = '';
+        files.forEach(file => {
+            const row = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            const actionCell = document.createElement('td');
+            const removeCell = document.createElement('td');
+            const link = document.createElement('a');
+            const removeButton = document.createElement('button');
+
+            nameCell.textContent = file;
+            link.href = '/download?filename=' + file;
+            link.textContent = 'Download';
+            link.classList.add('btn', 'btn-primary');
+            link.innerHTML = '<img src="https://img.icons8.com/ios-filled/50/000000/download.png" alt="Download" class="download-icon"> ' + link.textContent;
+
+            removeButton.textContent = 'Remove';
+            removeButton.classList.add('btn', 'btn-danger');
+            removeButton.innerHTML = '<img src="https://img.icons8.com/ios-filled/50/000000/delete-forever.png" alt="Remove" class="remove-icon"> ' + removeButton.textContent;
+            removeButton.addEventListener('click', () => {
+                removeFile(file);
+            });
+
+            actionCell.appendChild(link);
+            removeCell.appendChild(removeButton);
+            row.appendChild(nameCell);
+            row.appendChild(actionCell);
+            row.appendChild(removeCell);
+            fileList.appendChild(row);
+        });
+    }
+
+    // Function to remove a file
+    function removeFile(fileName) {
+        fetch('/remove?filename=' + encodeURIComponent(fileName), {
+            method: 'DELETE'
+        }).then(response => {
+            if (response.ok) {
+                fetchFiles(); // Refresh the file list
+            } else {
+                alert('Failed to remove file.');
+            }
+        });
+    }
+
+    // Fetch the list of files when the page loads
+    function fetchFiles() {
+        fetch('/files')
+            .then(response => response.json())
+            .then(data => displayFiles(data));
+    }
+
+    fetchFiles();
+
+    // Show success message on file upload
+    document.getElementById('uploadForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                document.getElementById('uploadSuccessAlert').style.display = 'block';
+                fetchFiles(); // Refresh the file list
+            } else {
+                alert('File upload failed.');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
